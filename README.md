@@ -4,6 +4,8 @@ Repo for testing issue: open-telemetry/opentelemetry-collector-contrib#31018
 
 The Loki exporter in combination with the Headers Setter extension seems to break when adding the `sending_queue.storage` config.
 
+## Testing
+
 Run:
 
 ```sh
