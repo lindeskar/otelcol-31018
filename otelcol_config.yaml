@@ -1,0 +1,45 @@
+---
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+        include_metadata: true
+
+exporters:
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+    auth:
+      authenticator: headers_setter
+    sending_queue:
+      enabled: true
+      # Enabling this breaks headers_setter, comment the row to see it work
+      storage: file_storage/queue
+    # And using a static header works
+    # headers:
+    #   X-Scope-OrgID: "foobar"
+
+extensions:
+  headers_setter:
+    headers:
+      - action: upsert
+        from_context: loki_tenant
+        key: X-Scope-OrgID
+
+  file_storage/queue:
+    compaction:
+      directory: /var/lib/storage/queue
+    directory: /var/lib/storage/queue
+
+service:
+  extensions:
+    - headers_setter
+    - file_storage/queue
+
+  pipelines:
+    logs:
+      receivers:
+        - otlp
+      processors: []
+      exporters:
+        - loki

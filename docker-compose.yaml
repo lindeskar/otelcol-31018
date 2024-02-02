@@ -1,0 +1,37 @@
+---
+version: "3"
+
+volumes:
+  queue:
+
+services:
+  loki:
+    image: grafana/loki:2.9.4
+    volumes:
+      - ./loki.yaml:/etc/loki/loki.yaml
+    command: -config.file=/etc/loki/loki.yaml
+    ports:
+      - "3100:3100"
+
+  otelcol:
+    image: otel/opentelemetry-collector-contrib:0.93.0
+    volumes:
+      - ./otelcol_config.yaml:/etc/otelcol-contrib/config.yaml
+      - ./queue:/var/lib/storage/queue
+    command:
+      - "--config=/etc/otelcol-contrib/config.yaml"
+    depends_on:
+      - loki
+
+  telemetrygen:
+    build: https://github.com/open-telemetry/opentelemetry-collector-contrib.git#v0.93.0:cmd/telemetrygen
+    command:
+      - logs
+      - --otlp-http
+      - --otlp-endpoint=otelcol:4318
+      - --otlp-header=loki_tenant="foobar"
+      - --otlp-insecure
+      - --otlp-attributes=foo="bar"
+      - --duration=10s
+    depends_on:
+      - otelcol
